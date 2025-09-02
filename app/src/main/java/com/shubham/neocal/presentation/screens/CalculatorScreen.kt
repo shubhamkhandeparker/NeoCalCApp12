@@ -66,173 +66,178 @@ fun CalculatorScreen(
         viewModel.initializeMathSteps(context)
     }
 
-    //show setting or  calculator based on state
-    if (showSettings) {
-        SettingsScreen(
-            onBackClick = { showSettings = false },
-            viewModel = viewModel
-        )
-    } else {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            colors.backgroundGradientStart,
-                            colors.backgroundGradientStart
+    Box(modifier = modifier.fillMaxSize()) {
+        //show setting or  calculator based on state
+        if (showSettings) {
+            SettingsScreen(
+                onBackClick = { showSettings = false },
+                viewModel = viewModel
+            )
+        } else {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                colors.backgroundGradientStart,
+                                colors.backgroundGradientStart
+                            )
                         )
                     )
-                )
-                .padding(20.dp),
-            contentAlignment = Alignment.Center
-        ) {
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = colors.calculatorBackground),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = colors.calculatorBackground),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    )
-                    {
-
-                        Spacer(modifier = Modifier.width(40.dp))
-
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f)
-                        ) {
-
-                            //Title:NeoCalc
-
-                            Text(
-                                text = "NeoCalc",
-                                color = colors.titleText,
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
-
-                            )
-
-                            //Subtitle : ✨ Kawaii computing Experience ✨
-
-                            Text(
-                                text = if (pagerState.currentPage == 0) "Basic Mode" else "Algebraic Mode",
-                                color = colors.subtitleText,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Normal,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-
-                        //Right:Control Buttons
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        )
+                        {
 
-                            //The toggle button
-                            val currentTheme by viewModel.currentTheme.collectAsState()
-                            Button(
-                                onClick = { viewModel.toggleTheme() },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (currentTheme == AppTheme.LIGHT)
-                                        Color(0xFF7C3AED) else Color(0xFF14B8A6)
-                                ),
-                                shape = CircleShape,
-                                modifier = Modifier.size(40.dp),
-                                contentPadding = PaddingValues(0.dp)
+                            Spacer(modifier = Modifier.width(40.dp))
+
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.weight(1f)
                             ) {
+
+                                //Title:NeoCalc
+
                                 Text(
-                                    text = if (currentTheme == AppTheme.LIGHT) "\uD83C\uDF19" else "☀\uFE0F",
-                                    fontSize = 16.sp
+                                    text = "NeoCalc",
+                                    color = colors.titleText,
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+
+                                )
+
+                                //Subtitle : ✨ Kawaii computing Experience ✨
+
+                                Text(
+                                    text = if (pagerState.currentPage == 0) "Basic Mode" else "Algebraic Mode",
+                                    color = colors.subtitleText,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    textAlign = TextAlign.Center
                                 )
                             }
-                            //setting button
-                            Button(
-                                onClick = { showSettings = true },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(
-                                        0xFF6B7280
-                                    )
-                                ),
-                                shape = CircleShape,
-                                modifier = Modifier.size(40.dp),
-                                contentPadding = PaddingValues(0.dp)
+
+                            //Right:Control Buttons
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
 
-                                Text("⚙\uFE0F", fontSize = 16.sp)
+                                //The toggle button
+                                val currentTheme by viewModel.currentTheme.collectAsState()
+                                Button(
+                                    onClick = { viewModel.toggleTheme() },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (currentTheme == AppTheme.LIGHT)
+                                            Color(0xFF7C3AED) else Color(0xFF14B8A6)
+                                    ),
+                                    shape = CircleShape,
+                                    modifier = Modifier.size(40.dp),
+                                    contentPadding = PaddingValues(0.dp)
+                                ) {
+                                    Text(
+                                        text = if (currentTheme == AppTheme.LIGHT) "\uD83C\uDF19" else "☀\uFE0F",
+                                        fontSize = 16.sp
+                                    )
+                                }
+                                //setting button
+                                Button(
+                                    onClick = { showSettings = true },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(
+                                            0xFF6B7280
+                                        )
+                                    ),
+                                    shape = CircleShape,
+                                    modifier = Modifier.size(40.dp),
+                                    contentPadding = PaddingValues(0.dp)
+                                ) {
+
+                                    Text("⚙\uFE0F", fontSize = 16.sp)
+                                }
+
+                                val isTTSEnabled by viewModel.isTTSEnabled.collectAsState()
+                                TTSToggleButton(
+                                    isEnabled = isTTSEnabled,
+                                    onClick = { viewModel.toggleTTS() }
+                                )
                             }
-
-                            val isTTSEnabled by viewModel.isTTSEnabled.collectAsState()
-                            TTSToggleButton(
-                                isEnabled = isTTSEnabled,
-                                onClick = { viewModel.toggleTTS() }
-                            )
                         }
-                    }
 
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    //Calculator Display
-                    CalculatorDisplay(
-                        displayText = displayText
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    //Swipeable Content
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier.fillMaxWidth()
-                    ) { page ->
-                        when (page) {
-                            0 -> BasicCalculatorContent(viewModel)
-                            1 -> AlgebraicCalculatorContent(viewModel)
-                        }
-                    }
-
-
-                    val showStepsModal by viewModel.showStepsModal.collectAsState()
-                    val steps by viewModel.steps.collectAsState()
-
-                    android.util.Log.d(
-                        "NeoCalc",
-                        "UI: showSteps=$showStepsModal,step.size=${steps.size},steps=$steps"
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedButton(
-                        onClick = { viewModel.onStepsClick() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Show Steps ", color = colors.titleText)
-                    }
-
-                    //steps display
-                    if (showStepsModal) {
-                        StepsModal(
-                            steps = steps,
-                            onDismiss = { viewModel.hideStepsModal() }
+                        //Calculator Display
+                        CalculatorDisplay(
+                            displayText = displayText
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        //Swipeable Content
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { page ->
+                            when (page) {
+                                0 -> BasicCalculatorContent(viewModel)
+                                1 -> AlgebraicCalculatorContent(viewModel)
+                            }
+                        }
+
+
+
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = { viewModel.onStepsClick() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Show Steps ", color = colors.titleText)
+                        }
                     }
                 }
+                val showStepsModal by viewModel.showStepsModal.collectAsState()
+                val steps by viewModel.steps.collectAsState()
+
+                android.util.Log.d(
+                    "NeoCalc",
+                    "UI: showSteps=$showStepsModal,step.size=${steps.size},steps=$steps"
+                )
+
+                if (showStepsModal) {
+                    StepsModal(
+                        steps = steps,
+                        onDismiss = { viewModel.hideStepsModal() }
+                    )
+                }
+
             }
+
         }
+
     }
 }
 
@@ -254,7 +259,7 @@ fun BasicCalculatorContent(viewModel: CalculatorViewModel) {
 
 @Composable
 fun AlgebraicCalculatorContent(viewModel: CalculatorViewModel) {
-    val showSteps by viewModel.showStepsModal.collectAsState()
+    val showStepsModal by viewModel.showStepsModal.collectAsState()
     val steps by viewModel.steps.collectAsState()
     val colors = LocalNeoCalcColors.current
 

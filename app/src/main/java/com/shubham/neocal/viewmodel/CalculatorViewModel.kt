@@ -19,6 +19,7 @@ import com.shubham.neocal.utils.MathSpeechParser
 import com.shubham.neocal.ui.theme.AppTheme
 import com.shubham.neocal.utils.MathStepsEngine
 
+
 /**
  * ViewModel Layer : Manages UI State for NeoCalc
  * Connect Models (business logic ) to View (UI)
@@ -71,10 +72,22 @@ class CalculatorViewModel(application: Application) : AndroidViewModel(applicati
 
     fun onStepsClick() {
         android.util.Log.d("NeoCalc","onStepsClick called with expression ${_displayText.value}")
-        mathStepsEngine?.solveExpression(_displayText.value)
-        _showStepsModal.value = true
-        android.util.Log.d("NeoCalc","showSteps set to :${_showStepsModal.value}")
-        android.util.Log.d("NeoCalc","Current Steps :${_showStepsModal.value}")
+        viewModelScope.launch {
+            try {
+                val steps=mathStepsEngine?.solveWithWolfram(_displayText.value)
+                    ?:listOf("Error:MathStepsEngine not initialized")
+                _steps.value=steps
+                _showStepsModal.value=true
+
+                android.util.Log.d("NeoCalc","Wolfram steps received : $steps")
+
+            }catch (e: Exception){
+                android.util.Log.e("NeoCalc","Error getting wolfram steps :${e.message}")
+                _steps.value=listOf("Step 1 : ${_displayText.value}","Error:${e.message}")
+                _showStepsModal.value=true
+            }
+        }
+
 
     }
 

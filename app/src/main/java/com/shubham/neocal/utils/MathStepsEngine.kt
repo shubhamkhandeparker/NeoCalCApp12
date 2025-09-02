@@ -5,10 +5,27 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.webkit.JavascriptInterface
 import android.util.Log
+import okhttp3.internal.format
+import retrofit2.Retrofit
+import retrofit2.converter.scalars.ScalarsConverterFactory
+import retrofit2.converter.simplexml.SimpleXmlConverterFactory
+import kotlin.math.exp
 
 
 class MathStepsEngine(private val context: Context) {
     private var webView: WebView? = null
+
+
+    private val wolframApi: WolframApi by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://api.wolframalpha.com/")
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .addConverterFactory(SimpleXmlConverterFactory.create())
+            .build()
+            .create(WolframApi::class.java)
+    }
+
+    private val appId = ""
 
     fun initialize() {
         webView = WebView(context).apply {
@@ -106,8 +123,78 @@ class MathStepsEngine(private val context: Context) {
 
     }
 
-    private fun getHtmlContent(): String {
-        return """
+
+    suspend fun solveWithWolfram(expression: String): List<String> {
+        try {
+            // --- STEP 1: MAKE THE INITIAL QUERY ---
+            Log.d("MathSteps", "--- Step 1: Making initial query for '$expression' ---")
+            val initialResponse = wolframApi.getSteps(
+                appId = appId,
+                input = "expand $expression",
+                format = "plaintext"
+            )
+            // Using the safe ?. operator and the elvis ?: operator for logging
+            Log.d("MathSteps", "Initial query got ${initialResponse.pods?.size ?: 0} pods.")
+
+            // Using the standard library's isNullOrEmpty() check, which is safe for nullable lists
+            if (!initialResponse.success || initialResponse.pods.isNullOrEmpty()) {
+                return listOf("Error: Wolfram Alpha could not understand the expression.")
+            }
+
+            // --- STEP 2: FIND A POD THAT OFFERS STEPS ---
+            var stepByStepState: String? = null
+
+            // Looping over the list, providing an empty list as a default if it's null
+            for (pod in initialResponse.pods ?: emptyList()) {
+                pod.states.forEach { state ->
+                    if (state.name == "Step-by-step solution") {
+                        stepByStepState = state.input
+                        Log.d("MathSteps", "Found step-by-step state in pod '${pod.title}'. Input required: '$stepByStepState'")
+                        return@forEach
+                    }
+                }
+                if (stepByStepState != null) break
+            }
+
+            // --- STEP 3: MAKE THE SECOND QUERY ---
+            if (stepByStepState != null) {
+                Log.d("MathSteps", "--- Step 2: Making follow-up query for steps ---")
+                val stepsResponse = wolframApi.getSteps(
+                    appId = appId,
+                    input = expression,
+                    format = "plaintext",
+                    podstate = stepByStepState
+                )
+                Log.d("MathSteps", "Steps query got ${stepsResponse.pods?.size ?: 0} pods.")
+
+                val stepsPod = stepsResponse.pods?.find { it.title == "Step-by-step solution" }
+                if (stepsPod != null) {
+                    val steps = mutableListOf<String>()
+                    // Safely iterating over subpods
+                    stepsPod.subpods?.forEach { subPod ->
+                        val currentText = subPod.plaintext
+                        if (!currentText.isNullOrEmpty()) {
+                            steps.add(currentText)
+                        }
+                    }
+                    return steps
+                }
+            }
+
+            // --- FALLBACK ---
+            Log.d("MathSteps", "No step-by-step state found. Displaying final result.")
+            val resultPod = initialResponse.pods?.find { it.primary == true || it.title == "Result" }
+            val result = resultPod?.subpods?.firstOrNull()?.plaintext ?: "Could not find result."
+            return listOf("Step 1: $expression", "Result: $result", "(No steps available)")
+
+        } catch (e: Exception) {
+            Log.e("MathSteps", "Wolfram API error: ${e.message}", e)
+            return listOf("Step 1: $expression", "Error: ${e.message}")
+        }
+    }
+
+            private fun getHtmlContent(): String {
+                return """
         <!DOCTYPE html >
         <html >
         <head >
@@ -132,35 +219,75 @@ class MathStepsEngine(private val context: Context) {
         var steps=[];
         steps.push("Steps 1:"+expression);
         
-        //using Algebrite for symbolic expression
-        var expanded = Algebrite.run("expand("+expression +")");
-        if(expanded && expanded !==expression){
+        //Enhanced step generation based on expression type
+        //Check for any power pattern :^2,^3,^4...etc.
+        var powerPattern =/\^(\d+)/;
+        var powerMatch = expression.match(powerPattern);
         
-        steps.push("Step 2 :Expand ->"+expanded);
+        
+        if(powerMatch && expression.includes("(")){
+        var exponent = powerMatch[1];
+        var baseExpression = expression.substring(0,expression.indexOf("^"));
+        
+        //Handle different exponents 
+        if(exponent == "2"){
+        steps.push("Step 2 : Rewrite as multiplication :" + baseExpression +"×" + baseExpression);
+        steps.push("Steps 3 : Apply FOIL method (First, Outer,Inner,Last)");
+        steps.push("Step 4 : Formula used : (a+b)² = a² + 2ab + b²");
+        
+        } 
+        else if (exponent =="3"){
+        steps.push("Step 2 :Rewrite as :" + baseExpression + "×" + baseExpression + "×" + baseExpression );
+        steps.push("Step 3 :First expand  :" + baseExpression + "² than multiply by " + baseExpression );
+        steps.push("Step 4 : Formula used :(a+b)³ = a³ + 3a²b + 3ab² + b³");
+        }
+        else {
+        steps.push("Step 2 : Rewrite as repeated multiplication :" + baseExpression + "multiplied" + exponent + "times");
+        steps.push ("Step 3 : use binominal theorem for expansion ");
+        steps.push("Step 4 : Apply the formula : (a+b)^n = Σ(nCk × a^(n-k) × b^k)");
         }
         
+        var expanded = Algebrite.run ("expand(" + expression + ")");   
+        if(expanded && expanded !== expression ) {
+        steps.push("Step " + (steps.length + 1 ) + " : Simplify :" + expanded );
+        }
+        } else if ( expression.includes ("*") && expression.includes(")")){
         
-        //adding more steps based on expression type
-        if(expression.includes("^2") || expression.includes("²")){
-        steps.push("Step 3 : Apply(a+b)² = a² +2ab + b² formula");
+        //Handles Multiplications of binominals 
+        steps.push("Step 2 : use distributive property (FOIL method )");
+         steps.push("Step 3 : Multiply each term in first bracket by each term in second bracket");
+         
+         var expanded = Algebrite.run("expand("+ expression + ")");
+         
+         if(expanded && expanded !==expression ) {
+         
+         steps.push("Step 4 : Combine like terms : " + expanded );
+         }
+        } else {
+        //Default Algebrite expression 
+        var expanded = Algebrite.run("expand("+ expression + ")");
+        if( expanded && expanded !== expression ){
+        steps.push ("Step 2 : Expand: " + expanded);
+        }
         }
         
         return steps;
-        } catch(error){
-        return["Step 1 :" + expression,"Error:"+error.toString()];
-        }
-        }
-              
-        window.onload=function(){
-        console.log("Window loaded !");
+        }catch(error){
+        return ["Step 1: "+ expression, "Error: " + error.toString()]; 
+       }
+       }
+       
+       window.onload = function(){
+       console.log("Window loaded !");
        setTimeout(checkLibraries,500);
-      
-        };
+       };
+        
+       
         </script>
         </body>
         </html>
         """.trimIndent()
-    }
+            }
 
 
-}
+        }

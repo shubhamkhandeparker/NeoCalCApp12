@@ -286,7 +286,12 @@ fun AlgebraicButtonGrid(
                 onClick = {onOperatorClick(")")},
                 modifier=Modifier.weight(1f)
             )
-
+            CalculatorButton(
+                text="^",
+                backgroundColor = NeoCalcColors.BlueButton,
+                onClick = {onOperatorClick("^")},
+                modifier=Modifier.weight(1f)
+            )
         }
 
 
